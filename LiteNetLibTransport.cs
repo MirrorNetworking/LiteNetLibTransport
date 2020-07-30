@@ -11,22 +11,29 @@ namespace Mirror
     {
         static readonly ILogger logger = LogFactory.GetLogger<LiteNetLibTransport>();
 
+        [Header("Config")]
+        public ushort port = 8888;
+        public int updateTime = 15;
+        public int disconnectTimeout = 5000;
+
         Client client;
         Server server;
 
         void Awake()
         {
-            // tell Telepathy to use Unity's Debug.Log
+            // tell Telepathy to use Unity's logger.Log
             LiteNetLibMirror.Logger.Log = logger.Log;
             LiteNetLibMirror.Logger.LogWarning = logger.LogWarning;
             LiteNetLibMirror.Logger.LogError = logger.LogError;
 
-            Debug.Log("LiteNetLibMirrorTransport initialized!");
+            logger.Log("LiteNetLibTransport initialized!");
         }
 
         public override void Shutdown()
         {
-            throw new NotImplementedException();
+            logger.Log("LiteNetLibTransport Shutdown");
+            client?.Disconnect();
+            server?.Stop();
         }
 
         public override bool Available()
@@ -45,7 +52,17 @@ namespace Mirror
             return NetConstants.PossibleMtu[0];
         }
 
-
+        private void LateUpdate()
+        {
+            if (ClientConnected())
+            {
+                client.OnUpdate();
+            }
+            if (ServerActive())
+            {
+                server.OnUpdate();
+            }
+        }
 
         #region CLIENT
         public override bool ClientConnected()
@@ -57,12 +74,17 @@ namespace Mirror
         {
             if (!ClientConnected())
             {
-                client = new Client();
+                client = new Client(port, updateTime, disconnectTimeout);
+
+                client.OnConnected += () => OnClientConnected.Invoke();
+                client.OnData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
+                client.OnDisconnected += () => OnClientDisconnected.Invoke();
+
                 client.Connect(address);
             }
             else
             {
-                Debug.LogWarning("Can't start client as one was already connected");
+                logger.LogWarning("Can't start client as one was already connected");
             }
         }
 
@@ -75,7 +97,7 @@ namespace Mirror
             }
             else
             {
-                Debug.LogWarning("Can't stop client as no client was connected");
+                logger.LogWarning("Can't stop client as no client was connected");
             }
         }
 
@@ -84,6 +106,7 @@ namespace Mirror
             return client.Send(channelId, segment);
         }
         #endregion
+
 
         #region SERVER
         public override bool ServerActive()
@@ -95,12 +118,12 @@ namespace Mirror
         {
             if (!ServerActive())
             {
-                server = new Server();
+                server = new Server(port, updateTime, disconnectTimeout);
                 server.Start();
             }
             else
             {
-                Debug.LogWarning("Can't start server as one was already active");
+                logger.LogWarning("Can't start server as one was already active");
             }
         }
 
@@ -113,7 +136,7 @@ namespace Mirror
             }
             else
             {
-                Debug.LogWarning("Can't stop server as no server was active");
+                logger.LogWarning("Can't stop server as no server was active");
             }
         }
 

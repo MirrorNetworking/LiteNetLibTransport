@@ -8,9 +8,9 @@ namespace LiteNetLibMirror
         private const string ConnectKey = "MIRROR_LITENETLIB";
 
         // configuration
-        public ushort Port = 8888;
-        public int UpdateTime = 15;
-        public int DisconnectTimeout = 5000;
+        readonly ushort port;
+        readonly int updateTime;
+        readonly int disconnectTimeout;
 
         // LiteNetLib state
         NetManager client;
@@ -19,20 +19,16 @@ namespace LiteNetLibMirror
         public event Action<ArraySegment<byte>> OnData;
         public event Action OnDisconnected;
 
-        public Client(ushort port)
+        public Client(ushort port, int updateTime, int disconnectTimeout)
         {
-            Port = port;
-        }
-
-        public Client(ushort port, int updateTime, int disconnectTimeout) : this(port)
-        {
-            UpdateTime = updateTime;
-            DisconnectTimeout = disconnectTimeout;
+            this.port = port;
+            this.updateTime = updateTime;
+            this.disconnectTimeout = disconnectTimeout;
         }
 
         public bool Connected { get; private set; }
 
-        internal void Connect(string address)
+        public void Connect(string address)
         {
             // not if already connected or connecting
             if (client != null)
@@ -46,8 +42,8 @@ namespace LiteNetLibMirror
             // create client
             EventBasedNetListener listener = new EventBasedNetListener();
             client = new NetManager(listener);
-            client.UpdateTime = UpdateTime;
-            client.DisconnectTimeout = DisconnectTimeout;
+            client.UpdateTime = updateTime;
+            client.DisconnectTimeout = disconnectTimeout;
 
             // set up events
             listener.PeerConnectedEvent += Listener_PeerConnectedEvent;
@@ -57,7 +53,7 @@ namespace LiteNetLibMirror
 
             // start & connect
             client.Start();
-            client.Connect(address, Port, ConnectKey);
+            client.Connect(address, port, ConnectKey);
         }
 
         private void Listener_PeerConnectedEvent(NetPeer peer)
@@ -90,7 +86,7 @@ namespace LiteNetLibMirror
         }
 
 
-        internal void Disconnect()
+        public void Disconnect()
         {
             if (client != null)
             {
@@ -105,14 +101,14 @@ namespace LiteNetLibMirror
             }
         }
 
-        internal bool Send(int channelId, ArraySegment<byte> segment)
+        public bool Send(int channelId, ArraySegment<byte> segment)
         {
             if (client != null && client.FirstPeer != null)
             {
                 try
                 {
-                    // convert DOTSNET channel to LiteNetLib channel & send
-                    DeliveryMethod deliveryMethod = LiteNetLibTransportUtils.ConvertChannel(channel);
+                    // convert Mirror channel to LiteNetLib channel & send
+                    DeliveryMethod deliveryMethod = LiteNetLibTransportUtils.ConvertChannel(channelId);
                     client.FirstPeer.Send(segment.Array, segment.Offset, segment.Count, deliveryMethod);
                     return true;
                 }
@@ -123,6 +119,15 @@ namespace LiteNetLibMirror
                 }
             }
             return false;
+        }
+
+        public void OnUpdate()
+        {
+            // only if connected or connecting
+            if (client != null)
+            {
+                client.PollEvents();
+            }
         }
     }
 }
