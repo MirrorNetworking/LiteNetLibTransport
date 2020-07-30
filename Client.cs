@@ -1,29 +1,34 @@
 using System;
 using LiteNetLib;
+using Mirror;
+using UnityEngine;
 
 namespace LiteNetLibMirror
 {
+    public delegate void OnClientData(ArraySegment<byte> data);
+
     public class Client
     {
-        private const string ConnectKey = "MIRROR_LITENETLIB";
 
         // configuration
         readonly ushort port;
         readonly int updateTime;
         readonly int disconnectTimeout;
+        readonly ILogger logger;
 
         // LiteNetLib state
         NetManager client;
 
-        public event Action OnConnected;
-        public event Action<ArraySegment<byte>> OnData;
-        public event Action OnDisconnected;
+        public event Action onConnected;
+        public event OnClientData onData;
+        public event Action onDisconnected;
 
-        public Client(ushort port, int updateTime, int disconnectTimeout)
+        public Client(ushort port, int updateTime, int disconnectTimeout, ILogger logger)
         {
             this.port = port;
             this.updateTime = updateTime;
             this.disconnectTimeout = disconnectTimeout;
+            this.logger = logger;
         }
 
         public bool Connected { get; private set; }
@@ -33,11 +38,11 @@ namespace LiteNetLibMirror
             // not if already connected or connecting
             if (client != null)
             {
-                Logger.LogWarning("LiteNet: client already connected/connecting.");
+                logger.LogWarning("LiteNet: client already connected/connecting.");
                 return;
             }
 
-            Logger.Log("LiteNet CL: connecting...");
+            logger.Log("LiteNet CL: connecting...");
 
             // create client
             EventBasedNetListener listener = new EventBasedNetListener();
@@ -53,20 +58,20 @@ namespace LiteNetLibMirror
 
             // start & connect
             client.Start();
-            client.Connect(address, port, ConnectKey);
+            client.Connect(address, port, LiteNetLibTransportUtils.ConnectKey);
         }
 
         private void Listener_PeerConnectedEvent(NetPeer peer)
         {
-            Logger.Log("LiteNet CL client connected: " + peer.EndPoint);
+            if (logger.LogEnabled()) logger.Log($"LiteNet CL client connected: {peer.EndPoint}");
             Connected = true;
-            OnConnected?.Invoke();
+            onConnected?.Invoke();
         }
 
         private void Listener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
-            Logger.Log("LiteNet CL received " + reader.AvailableBytes + " bytes. method=" + deliveryMethod);
-            OnData?.Invoke(reader.GetRemainingBytesSegment());
+            if (logger.LogEnabled()) logger.Log($"LiteNet CL received {reader.AvailableBytes} bytes. method={deliveryMethod}");
+            onData?.Invoke(reader.GetRemainingBytesSegment());
             reader.Recycle();
         }
 
@@ -74,14 +79,14 @@ namespace LiteNetLibMirror
         {
             // this is called when the server stopped.
             // this is not called when the client disconnected.
-            Logger.Log("LiteNet CL disconnected. info=" + disconnectInfo);
+            if (logger.LogEnabled()) logger.Log($"LiteNet CL disconnected. info={disconnectInfo}");
             Connected = false;
             Disconnect();
         }
 
         private void Listener_NetworkErrorEvent(System.Net.IPEndPoint endPoint, System.Net.Sockets.SocketError socketError)
         {
-            Logger.LogWarning("LiteNet CL network error: " + endPoint + " error=" + socketError);
+            if (logger.WarnEnabled()) logger.LogWarning($"LiteNet CL network error: {endPoint} error={socketError}");
             // TODO should we disconnect or is it called automatically?
         }
 
@@ -97,7 +102,7 @@ namespace LiteNetLibMirror
 
                 // PeerDisconnectedEvent is not called when voluntarily
                 // disconnecting. need to call OnDisconnected manually.
-                OnDisconnected?.Invoke();
+                onDisconnected?.Invoke();
             }
         }
 
@@ -114,7 +119,7 @@ namespace LiteNetLibMirror
                 }
                 catch (TooBigPacketException exception)
                 {
-                    Logger.LogWarning("LiteNet CL: send failed. reason=" + exception);
+                    if (logger.WarnEnabled()) logger.LogWarning($"LiteNet CL: send failed. reason={exception}");
                     return false;
                 }
             }

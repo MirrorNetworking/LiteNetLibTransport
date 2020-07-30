@@ -21,11 +21,6 @@ namespace Mirror
 
         void Awake()
         {
-            // tell Telepathy to use Unity's logger.Log
-            LiteNetLibMirror.Logger.Log = logger.Log;
-            LiteNetLibMirror.Logger.LogWarning = logger.LogWarning;
-            LiteNetLibMirror.Logger.LogError = logger.LogError;
-
             logger.Log("LiteNetLibTransport initialized!");
         }
 
@@ -74,11 +69,11 @@ namespace Mirror
         {
             if (!ClientConnected())
             {
-                client = new Client(port, updateTime, disconnectTimeout);
+                client = new Client(port, updateTime, disconnectTimeout, logger);
 
-                client.OnConnected += () => OnClientConnected.Invoke();
-                client.OnData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
-                client.OnDisconnected += () => OnClientDisconnected.Invoke();
+                client.onConnected += () => OnClientConnected.Invoke();
+                client.onData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
+                client.onDisconnected += () => OnClientDisconnected.Invoke();
 
                 client.Connect(address);
             }
@@ -118,7 +113,12 @@ namespace Mirror
         {
             if (!ServerActive())
             {
-                server = new Server(port, updateTime, disconnectTimeout);
+                server = new Server(port, updateTime, disconnectTimeout, logger);
+
+                server.onConnected += (clientId) => OnServerConnected.Invoke(clientId);
+                server.onData += (clientId, data) => OnServerDataReceived.Invoke(clientId, data, Channels.DefaultReliable);
+                server.onDisconnected += (clientId) => OnServerDisconnected.Invoke(clientId);
+
                 server.Start();
             }
             else
