@@ -1,5 +1,5 @@
 {
-    "name": "LiteNetLibMirror",
+    "name": "LiteNetLibTransport",
     "references": [
         "Mirror"
     ],

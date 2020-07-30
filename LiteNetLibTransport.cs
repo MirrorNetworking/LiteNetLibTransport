@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace Mirror
 {
-    public class LiteNetLibMirrorTransport : Transport
+    public class LiteNetLibTransport : Transport
     {
-        static readonly ILogger logger = LogFactory.GetLogger<LiteNetLibMirrorTransport>();
+        static readonly ILogger logger = LogFactory.GetLogger<LiteNetLibTransport>();
 
         Client client;
         Server server;
