@@ -38,6 +38,25 @@ namespace LiteNetLibMirror
             this.logger = logger;
         }
 
+        /// <summary>
+        /// Mirror connection Ids are 1 indexed but LiteNetLib is 0 indexed so we have to add 1 to the peer Id
+        /// </summary>
+        /// <param name="peerId">0 indexed id used by LiteNetLib</param>
+        /// <returns>1 indexed id used by mirror</returns>
+        private static int ToMirrorId(int peerId)
+        {
+            return peerId + 1;
+        }
+        
+        /// <summary>
+        /// Mirror connection Ids are 1 indexed but LiteNetLib is 0 indexed so we have to add 1 to the peer Id
+        /// </summary>
+        /// <param name="mirrorId">1 indexed id used by mirror</param>
+        /// <returns>0 indexed id used by LiteNetLib</returns>
+        private static int ToPeerId(int mirrorId)
+        {
+            return mirrorId - 1;
+        }
 
         public void Start()
         {
@@ -76,25 +95,29 @@ namespace LiteNetLibMirror
 
         private void Listener_PeerConnectedEvent(NetPeer peer)
         {
-            if (logger.LogEnabled()) logger.Log($"LiteNet SV client connected: {peer.EndPoint} id={peer.Id}");
-            connections[peer.Id] = peer;
-            onConnected?.Invoke(peer.Id);
+            int id = ToMirrorId(peer.Id);
+            if (logger.LogEnabled()) logger.Log($"LiteNet SV client connected: {peer.EndPoint} id={id}");
+            connections[id] = peer;
+            onConnected?.Invoke(id);
         }
 
         private void Listener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
+            int id = ToMirrorId(peer.Id);
+
             if (logger.LogEnabled()) logger.Log($"LiteNet SV received {reader.AvailableBytes} bytes. method={deliveryMethod}");
-            onData?.Invoke(peer.Id, reader.GetRemainingBytesSegment());
+            onData?.Invoke(id, reader.GetRemainingBytesSegment());
             reader.Recycle();
         }
 
         private void Listener_PeerDisconnectedEvent(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            int id = ToMirrorId(peer.Id);
             // this is called both when a client disconnects, and when we
             // disconnect a client.
             if (logger.LogEnabled()) logger.Log($"LiteNet SV client disconnected: {peer.EndPoint} info={disconnectInfo}");
-            onDisconnected?.Invoke(peer.Id);
-            connections.Remove(peer.Id);
+            onDisconnected?.Invoke(id);
+            connections.Remove(id);
         }
 
         private void Listener_NetworkErrorEvent(IPEndPoint endPoint, System.Net.Sockets.SocketError socketError)
