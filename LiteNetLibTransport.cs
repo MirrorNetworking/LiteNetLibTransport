@@ -49,11 +49,11 @@ namespace Mirror
 
         private void LateUpdate()
         {
-            if (ClientConnected())
+            if (client != null)
             {
                 client.OnUpdate();
             }
-            if (ServerActive())
+            if (server != null)
             {
                 server.OnUpdate();
             }
@@ -87,32 +87,28 @@ namespace Mirror
         }
 
         #region CLIENT
-        public override bool ClientConnected()
-        {
-            return client != null && client.Connected;
-        }
+        public override bool ClientConnected() => client != null && client.Connected;
 
         public override void ClientConnect(string address)
         {
-            if (!ClientConnected())
-            {
-                client = new Client(port, updateTime, disconnectTimeout, logger);
-
-                client.onConnected += () => OnClientConnected.Invoke();
-                client.onData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
-                client.onDisconnected += () => OnClientDisconnected.Invoke();
-
-                client.Connect(address);
-            }
-            else
+            if (client != null)
             {
                 logger.LogWarning("Can't start client as one was already connected");
+                return;
             }
+
+            client = new Client(port, updateTime, disconnectTimeout, logger);
+
+            client.onConnected += () => OnClientConnected.Invoke();
+            client.onData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
+            client.onDisconnected += () => OnClientDisconnected.Invoke();
+
+            client.Connect(address);
         }
 
         public override void ClientDisconnect()
         {
-            if (ClientConnected())
+            if (client != null)
             {
                 client.Disconnect();
                 client = null;
@@ -125,38 +121,39 @@ namespace Mirror
 
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
+            if (client == null || !client.Connected)
+            {
+                logger.LogWarning("Can't send when client is not connected");
+                return false;
+            }
             return client.Send(channelId, segment);
         }
         #endregion
 
 
         #region SERVER
-        public override bool ServerActive()
-        {
-            return server != null;
-        }
+        public override bool ServerActive() => server != null;
 
         public override void ServerStart()
         {
-            if (!ServerActive())
-            {
-                server = new Server(port, updateTime, disconnectTimeout, logger);
-
-                server.onConnected += (clientId) => OnServerConnected.Invoke(clientId);
-                server.onData += (clientId, data) => OnServerDataReceived.Invoke(clientId, data, Channels.DefaultReliable);
-                server.onDisconnected += (clientId) => OnServerDisconnected.Invoke(clientId);
-
-                server.Start();
-            }
-            else
+            if (server != null)
             {
                 logger.LogWarning("Can't start server as one was already active");
+                return;
             }
+
+            server = new Server(port, updateTime, disconnectTimeout, logger);
+
+            server.onConnected += (clientId) => OnServerConnected.Invoke(clientId);
+            server.onData += (clientId, data) => OnServerDataReceived.Invoke(clientId, data, Channels.DefaultReliable);
+            server.onDisconnected += (clientId) => OnServerDisconnected.Invoke(clientId);
+
+            server.Start();
         }
 
         public override void ServerStop()
         {
-            if (ServerActive())
+            if (server != null)
             {
                 server.Stop();
                 server = null;
@@ -169,22 +166,34 @@ namespace Mirror
 
         public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment)
         {
+            if (server == null)
+            {
+                logger.LogWarning("Can't send when Server is not active");
+                return false;
+            }
+
             return server.Send(connectionIds, channelId, segment);
         }
 
         public override bool ServerDisconnect(int connectionId)
         {
+            if (server == null)
+            {
+                logger.LogWarning("Can't disconnect when Server is not active");
+                return false;
+            }
+
             return server.Disconnect(connectionId);
         }
 
         public override string ServerGetClientAddress(int connectionId)
         {
-            return server.GetClientAddress(connectionId);
+            return server?.GetClientAddress(connectionId);
         }
 
         public override Uri ServerUri()
         {
-            return server.GetUri();
+            return server?.GetUri();
         }
         #endregion
     }
