@@ -47,7 +47,7 @@ namespace LiteNetLibMirror
         {
             return peerId + 1;
         }
-        
+
         /// <summary>
         /// Mirror connection Ids are 1 indexed but LiteNetLib is 0 indexed so we have to add 1 to the peer Id
         /// </summary>
@@ -140,35 +140,37 @@ namespace LiteNetLibMirror
         {
             if (server != null)
             {
-                bool success = true;
                 foreach (int connectionId in connectionIds)
                 {
-                    success &= SendOne(connectionId, channelId, segment);
+                    SendOne(connectionId, channelId, segment);
                 }
+                return true;
             }
-            logger.LogWarning("LiteNet SV: can't send because not started yet.");
-            return false;
+            else
+            {
+                logger.LogWarning("LiteNet SV: can't send because not started yet.");
+                return false;
+            }
         }
 
-        private bool SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
+        private void SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
         {
             if (connections.TryGetValue(connectionId, out NetPeer peer))
             {
                 try
                 {
-                    // convert Mirror channel to LiteNetLib channel & send
                     DeliveryMethod deliveryMethod = LiteNetLibTransportUtils.ConvertChannel(channelId);
                     peer.Send(segment.Array, segment.Offset, segment.Count, deliveryMethod);
-                    return true;
                 }
                 catch (TooBigPacketException exception)
                 {
-                    if (logger.WarnEnabled()) logger.LogWarning($"LiteNet SV: send failed for connectionId={connectionId} reason={exception}");
-                    return false;
+                    if (logger.WarnEnabled()) { logger.LogWarning($"LiteNet SV: send failed for connectionId={connectionId} reason={exception}"); }
                 }
             }
-            if (logger.WarnEnabled()) logger.LogWarning($"LiteNet SV: invalid connectionId={connectionId}");
-            return false;
+            else if (logger.WarnEnabled())
+            {
+                logger.LogWarning($"LiteNet SV: invalid connectionId={connectionId}");
+            }
         }
 
         /// <summary>
