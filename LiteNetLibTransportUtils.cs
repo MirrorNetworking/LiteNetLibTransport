@@ -25,5 +25,19 @@ namespace LiteNetLibMirror
                     throw new ArgumentException("Unexpected channel: " + channel);
             }
         }
+
+        public static int ConvertChannel(DeliveryMethod channel)
+        {
+            switch (channel)
+            {
+                case DeliveryMethod.ReliableOrdered:
+                    return Channels.DefaultReliable;
+                case DeliveryMethod.Unreliable:
+                    return Channels.DefaultUnreliable;
+                default:
+                    throw new ArgumentException("Unexpected channel: " + channel);
+            }
+
+        }
     }
 }

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace LiteNetLibMirror
 {
     public delegate void OnConnected(int clientId);
-    public delegate void OnServerData(int clientId, ArraySegment<byte> data);
+    public delegate void OnServerData(int clientId, ArraySegment<byte> data, int channel);
     public delegate void OnDisconnected(int clientId);
 
     public class Server
@@ -106,7 +106,8 @@ namespace LiteNetLibMirror
             int id = ToMirrorId(peer.Id);
 
             if (logger.LogEnabled()) logger.Log($"LiteNet SV received {reader.AvailableBytes} bytes. method={deliveryMethod}");
-            onData?.Invoke(id, reader.GetRemainingBytesSegment());
+            int mirrorChannel = LiteNetLibTransportUtils.ConvertChannel(deliveryMethod);
+            onData?.Invoke(id, reader.GetRemainingBytesSegment(), mirrorChannel);
             reader.Recycle();
         }
 

@@ -99,9 +99,9 @@ namespace Mirror
 
             client = new Client(port, updateTime, disconnectTimeout, logger);
 
-            client.onConnected += () => OnClientConnected.Invoke();
-            client.onData += data => OnClientDataReceived.Invoke(data, Channels.DefaultReliable);
-            client.onDisconnected += () => OnClientDisconnected.Invoke();
+            client.onConnected += OnClientConnected.Invoke;
+            client.onData += OnClientDataReceived.Invoke;
+            client.onDisconnected += OnClientDisconnected.Invoke;
 
             client.Connect(address);
         }
@@ -110,12 +110,13 @@ namespace Mirror
         {
             if (client != null)
             {
+                // remove events before calling disconnect so stop loops within mirror
+                client.onConnected -= OnClientConnected.Invoke;
+                client.onData -= OnClientDataReceived.Invoke;
+                client.onDisconnected -= OnClientDisconnected.Invoke;
+
                 client.Disconnect();
                 client = null;
-            }
-            else
-            {
-                logger.LogWarning("Can't stop client as no client was connected");
             }
         }
 
@@ -144,9 +145,9 @@ namespace Mirror
 
             server = new Server(port, updateTime, disconnectTimeout, logger);
 
-            server.onConnected += (clientId) => OnServerConnected.Invoke(clientId);
-            server.onData += (clientId, data) => OnServerDataReceived.Invoke(clientId, data, Channels.DefaultReliable);
-            server.onDisconnected += (clientId) => OnServerDisconnected.Invoke(clientId);
+            server.onConnected += OnServerConnected.Invoke;
+            server.onData += OnServerDataReceived.Invoke;
+            server.onDisconnected += OnServerDisconnected.Invoke;
 
             server.Start();
         }
@@ -155,6 +156,10 @@ namespace Mirror
         {
             if (server != null)
             {
+                server.onConnected -= OnServerConnected.Invoke;
+                server.onData -= OnServerDataReceived.Invoke;
+                server.onDisconnected -= OnServerDisconnected.Invoke;
+
                 server.Stop();
                 server = null;
             }
