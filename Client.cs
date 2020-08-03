@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using LiteNetLib;
 using Mirror;
 using UnityEngine;
@@ -22,6 +23,8 @@ namespace LiteNetLibMirror
         public event Action onConnected;
         public event OnClientData onData;
         public event Action onDisconnected;
+
+        public IPEndPoint RemoteEndPoint => client.FirstPeer.EndPoint;
 
         public Client(ushort port, int updateTime, int disconnectTimeout, ILogger logger)
         {
