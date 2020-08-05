@@ -28,11 +28,12 @@ namespace Mirror
         /// <summary>
         /// Client message recieved while Transport was disabled
         /// </summary>
-        Queue<ClientDataMessage> clientDisabledQueue;
+        readonly Queue<ClientDataMessage> clientDisabledQueue = new Queue<ClientDataMessage>();
+
         /// <summary>
         /// Server message recieved while Transport was disabled
         /// </summary>
-        Queue<ServerDataMessage> serverDisabledQueue;
+        readonly Queue<ServerDataMessage> serverDisabledQueue = new Queue<ServerDataMessage>();
         /// <summary>
         /// If messages were added to DisabledQueues
         /// </summary>
