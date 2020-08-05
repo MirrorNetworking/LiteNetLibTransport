@@ -16,8 +16,27 @@ namespace Mirror
         public int updateTime = 15;
         public int disconnectTimeout = 5000;
 
+        /// <summary>
+        /// Active Client, null is no client is active
+        /// </summary>
         Client client;
+        /// <summary>
+        /// Active Server, null is no Server is active
+        /// </summary>
         Server server;
+
+        /// <summary>
+        /// Client message recieved while Transport was disabled
+        /// </summary>
+        Queue<ClientDataMessage> clientDisabledQueue;
+        /// <summary>
+        /// Server message recieved while Transport was disabled
+        /// </summary>
+        Queue<ServerDataMessage> serverDisabledQueue;
+        /// <summary>
+        /// If messages were added to DisabledQueues
+        /// </summary>
+        bool checkMessageQueues;
 
         void Awake()
         {
@@ -57,7 +76,24 @@ namespace Mirror
             {
                 server.OnUpdate();
             }
+
+            if (checkMessageQueues)
+            {
+                while (clientDisabledQueue.Count > 0)
+                {
+                    ClientDataMessage data = clientDisabledQueue.Dequeue();
+                    OnClientDataReceived.Invoke(data.data, data.channel);
+                }
+                while (serverDisabledQueue.Count > 0)
+                {
+                    ServerDataMessage data = serverDisabledQueue.Dequeue();
+                    OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
+                }
+
+                checkMessageQueues = false;
+            }
         }
+
         public override string ToString()
         {
             if (server != null)
@@ -100,10 +136,23 @@ namespace Mirror
             client = new Client(port, updateTime, disconnectTimeout, logger);
 
             client.onConnected += OnClientConnected.Invoke;
-            client.onData += OnClientDataReceived.Invoke;
+            client.onData += Client_onData;
             client.onDisconnected += OnClientDisconnected.Invoke;
 
             client.Connect(address);
+        }
+
+        private void Client_onData(ArraySegment<byte> data, int channel)
+        {
+            if (enabled)
+            {
+                OnClientDataReceived.Invoke(data, channel);
+            }
+            else
+            {
+                clientDisabledQueue.Enqueue(new ClientDataMessage(data, channel));
+                checkMessageQueues = true;
+            }
         }
 
         public override void ClientDisconnect()
@@ -146,10 +195,23 @@ namespace Mirror
             server = new Server(port, updateTime, disconnectTimeout, logger);
 
             server.onConnected += OnServerConnected.Invoke;
-            server.onData += OnServerDataReceived.Invoke;
+            server.onData += Server_onData;
             server.onDisconnected += OnServerDisconnected.Invoke;
 
             server.Start();
+        }
+
+        private void Server_onData(int clientId, ArraySegment<byte> data, int channel)
+        {
+            if (enabled)
+            {
+                OnServerDataReceived.Invoke(clientId, data, channel);
+            }
+            else
+            {
+                serverDisabledQueue.Enqueue(new ServerDataMessage(clientId, data, channel));
+                checkMessageQueues = true;
+            }
         }
 
         public override void ServerStop()
