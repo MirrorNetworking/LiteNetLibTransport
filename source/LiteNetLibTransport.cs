@@ -69,6 +69,23 @@ namespace Mirror
 
         private void LateUpdate()
         {
+            // check for messages in queue before processing new messages
+            if (enabled && checkMessageQueues)
+            {
+                while (enabled && clientDisabledQueue.Count > 0)
+                {
+                    ClientDataMessage data = clientDisabledQueue.Dequeue();
+                    OnClientDataReceived.Invoke(data.data, data.channel);
+                }
+                while (enabled && serverDisabledQueue.Count > 0)
+                {
+                    ServerDataMessage data = serverDisabledQueue.Dequeue();
+                    OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
+                }
+
+                checkMessageQueues = false;
+            }
+
             if (client != null)
             {
                 client.OnUpdate();
@@ -76,22 +93,6 @@ namespace Mirror
             if (server != null)
             {
                 server.OnUpdate();
-            }
-
-            if (checkMessageQueues)
-            {
-                while (clientDisabledQueue.Count > 0)
-                {
-                    ClientDataMessage data = clientDisabledQueue.Dequeue();
-                    OnClientDataReceived.Invoke(data.data, data.channel);
-                }
-                while (serverDisabledQueue.Count > 0)
-                {
-                    ServerDataMessage data = serverDisabledQueue.Dequeue();
-                    OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
-                }
-
-                checkMessageQueues = false;
             }
         }
 
