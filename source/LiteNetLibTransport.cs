@@ -16,6 +16,12 @@ namespace Mirror
         public int updateTime = 15;
         public int disconnectTimeout = 5000;
 
+        [Tooltip("Caps the number of messages the server will process per tick. Allows LateUpdate to finish to let the reset of unity contiue incase more messages arrive before they are processed")]
+        public int serverMaxMessagesPerTick = 10000;
+
+        [Tooltip("Caps the number of messages the client will process per tick. Allows LateUpdate to finish to let the reset of unity contiue incase more messages arrive before they are processed")]
+        public int clientMaxMessagesPerTick = 1000;
+
         /// <summary>
         /// Active Client, null is no client is active
         /// </summary>
@@ -72,18 +78,14 @@ namespace Mirror
             // check for messages in queue before processing new messages
             if (enabled && checkMessageQueues)
             {
-                while (enabled && clientDisabledQueue.Count > 0)
-                {
-                    ClientDataMessage data = clientDisabledQueue.Dequeue();
-                    OnClientDataReceived.Invoke(data.data, data.channel);
-                }
-                while (enabled && serverDisabledQueue.Count > 0)
-                {
-                    ServerDataMessage data = serverDisabledQueue.Dequeue();
-                    OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
-                }
+                ProcessClientQueue();
+                ProcessServerQueue();
 
-                checkMessageQueues = false;
+                // if enabled becomes false not all message will be processed, so need to check if queues are empty before clearing flag
+                if (clientDisabledQueue.Count == 0 && serverDisabledQueue.Count == 0)
+                {
+                    checkMessageQueues = false;
+                }
             }
 
             if (client != null)
@@ -93,6 +95,37 @@ namespace Mirror
             if (server != null)
             {
                 server.OnUpdate();
+            }
+        }
+
+        private void ProcessClientQueue()
+        {
+            int processedCount = 0;
+            while (
+                enabled &&
+                processedCount < clientMaxMessagesPerTick &&
+                clientDisabledQueue.Count > 0
+                )
+            {
+                processedCount++;
+
+                ClientDataMessage data = clientDisabledQueue.Dequeue();
+                OnClientDataReceived.Invoke(data.data, data.channel);
+            }
+        }
+
+        private void ProcessServerQueue()
+        {
+            int processedCount = 0;
+            while (
+                enabled &&
+                processedCount < serverMaxMessagesPerTick &&
+                serverDisabledQueue.Count > 0
+                )
+            {
+                processedCount++;
+                ServerDataMessage data = serverDisabledQueue.Dequeue();
+                OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
             }
         }
 
