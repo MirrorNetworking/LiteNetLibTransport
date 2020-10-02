@@ -52,6 +52,7 @@ namespace LiteNetLibMirror
             client = new NetManager(listener);
             client.UpdateTime = updateTime;
             client.DisconnectTimeout = disconnectTimeout;
+            client.IPv6Enabled = IPv6Mode.DualMode;
 
             // set up events
             listener.PeerConnectedEvent += Listener_PeerConnectedEvent;
