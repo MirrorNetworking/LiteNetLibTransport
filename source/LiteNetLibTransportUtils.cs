@@ -6,7 +6,7 @@ namespace LiteNetLibMirror
 {
     public static class LiteNetLibTransportUtils
     {
-        public const string ConnectKey = "MIRROR_LITENETLIB";
+        public static string ConnectKey => "MIRROR_LITENETLIB";
 
         /// <summary>
         /// convert Mirror channel to LiteNetLib channel
