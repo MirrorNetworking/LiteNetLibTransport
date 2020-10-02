@@ -6,6 +6,8 @@ namespace Mirror
 {
     public class LiteNetLibChannels : Channels
     {
+        // channels have an offset of +10 unless they are the default channel that mirror has built in
+
         /// <summary>
         /// Unreliable. Packets can be dropped, can be duplicated, can arrive without order.
         /// <para>DefaultUnreliable is Unreliable</para>
@@ -49,11 +51,10 @@ namespace LiteNetLibMirror
         {
             switch (channel)
             {
-                case LiteNetLibChannels.DefaultReliable:
+                case LiteNetLibChannels.ReliableOrdered:
                     return DeliveryMethod.ReliableOrdered;
-                case LiteNetLibChannels.DefaultUnreliable:
+                case LiteNetLibChannels.Unreliable:
                     return DeliveryMethod.Unreliable;
-
                 case LiteNetLibChannels.ReliableUnordered:
                     return DeliveryMethod.ReliableUnordered;
                 case LiteNetLibChannels.Sequenced:
@@ -70,9 +71,9 @@ namespace LiteNetLibMirror
             switch (channel)
             {
                 case DeliveryMethod.ReliableOrdered:
-                    return Channels.DefaultReliable;
+                    return LiteNetLibChannels.ReliableOrdered;
                 case DeliveryMethod.Unreliable:
-                    return Channels.DefaultUnreliable;
+                    return LiteNetLibChannels.Unreliable;
                 case DeliveryMethod.ReliableUnordered:
                     return LiteNetLibChannels.ReliableUnordered;
                 case DeliveryMethod.Sequenced:
