@@ -4,7 +4,7 @@ using Mirror;
 
 namespace Mirror
 {
-    public class LiteNetLibChannels : Channels
+    public class LiteNetLibChannels
     {
         // channels have an offset of +10 unless they are the default channel that mirror has built in
 
