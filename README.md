@@ -8,7 +8,7 @@ LiteNetLib code from this commit https://github.com/RevenantX/LiteNetLib/tree/v0
 
 ## Usage
 
-1) Download All the code from the source folder
+1) Download the code from the source folder or package on [Release](https://github.com/MirrorNetworking/LiteNetLibTransport/releases) page.
 2) Put the code somewhere in your Assets folder
 3) Replace your existing Transport with LiteNetLibTransport on your NetworkManager
 
