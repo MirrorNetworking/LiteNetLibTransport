@@ -139,23 +139,27 @@ namespace LiteNetLibMirror
 
         public bool Send(List<int> connectionIds, int channelId, ArraySegment<byte> segment)
         {
-            if (server != null)
-            {
-                foreach (int connectionId in connectionIds)
-                {
-                    SendOne(connectionId, channelId, segment);
-                }
-                return true;
-            }
-            else
+            if (server == null)
             {
                 logger.LogWarning("LiteNet SV: can't send because not started yet.");
                 return false;
             }
+
+            foreach (int connectionId in connectionIds)
+            {
+                SendOne(connectionId, channelId, segment);
+            }
+            return true;
         }
 
-        private void SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
+        public void SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
         {
+            if (server == null)
+            {
+                logger.LogWarning("LiteNet SV: can't send because not started yet.");
+                return;
+            }
+
             if (connections.TryGetValue(connectionId, out NetPeer peer))
             {
                 try

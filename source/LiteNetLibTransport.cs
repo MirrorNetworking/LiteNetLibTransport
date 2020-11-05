@@ -63,7 +63,7 @@ namespace Mirror
             return Application.platform != RuntimePlatform.WebGLPlayer;
         }
 
-        public override int GetMaxPacketSize(int channelId = 0)
+        public override int GetMaxPacketSize(int channelId = Channels.DefaultReliable)
         {
             // LiteNetLib NetPeer construct calls SetMTU(0), which sets it to
             // NetConstants.PossibleMtu[0] which is 576-68.
@@ -204,6 +204,18 @@ namespace Mirror
             }
         }
 
+#if MIRROR_26_0_OR_NEWER
+        public override void ClientSend(int channelId, ArraySegment<byte> segment)
+        {
+            if (client == null || !client.Connected)
+            {
+                logger.LogWarning("Can't send when client is not connected");
+                return;
+            }
+
+            client.Send(channelId, segment);
+        }
+#else
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
             if (client == null || !client.Connected)
@@ -213,6 +225,7 @@ namespace Mirror
             }
             return client.Send(channelId, segment);
         }
+#endif
         #endregion
 
 
@@ -266,7 +279,19 @@ namespace Mirror
             }
         }
 
-        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment)
+#if MIRROR_26_0_OR_NEWER 
+        public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
+        {
+            if (server == null)
+            {
+                logger.LogWarning("Can't send when Server is not active");
+                return;
+            }
+
+            server.SendOne(connectionId, channelId, segment);
+        }
+#else
+        public override bool ServerSend(System.Collections.Generic.List<int> connectionIds, int channelId, ArraySegment<byte> segment)
         {
             if (server == null)
             {
@@ -276,6 +301,7 @@ namespace Mirror
 
             return server.Send(connectionIds, channelId, segment);
         }
+#endif
 
         public override bool ServerDisconnect(int connectionId)
         {
