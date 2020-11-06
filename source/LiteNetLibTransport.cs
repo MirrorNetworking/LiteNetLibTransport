@@ -15,6 +15,7 @@ namespace Mirror
         public ushort port = 8888;
         public int updateTime = 15;
         public int disconnectTimeout = 5000;
+        public bool ipv6Enabled;
 
         [Tooltip("Caps the number of messages the server will process per tick. Allows LateUpdate to finish to let the reset of unity contiue incase more messages arrive before they are processed")]
         public int serverMaxMessagesPerTick = 10000;
@@ -174,7 +175,7 @@ namespace Mirror
             client.onData += Client_onData;
             client.onDisconnected += OnClientDisconnected.Invoke;
 
-            client.Connect(address);
+            client.Connect(address, ipv6Enabled);
         }
 
         private void Client_onData(ArraySegment<byte> data, int channel)
