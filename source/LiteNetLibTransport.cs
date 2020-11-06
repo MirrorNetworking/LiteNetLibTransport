@@ -141,7 +141,7 @@ namespace Mirror
                 //   incompatible with the requested protocol was used at
                 //   System.Net.Sockets.Socket.get_LocalEndPoint ()
                 // so let's use the regular port instead.
-                return "TeleLiteNetLibpathy Server port: " + port;
+                return "LiteNetLib Server port: " + port;
             }
             else if (client != null)
             {
