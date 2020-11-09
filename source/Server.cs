@@ -221,6 +221,18 @@ namespace LiteNetLibMirror
             return string.Empty;
         }
 
+        public IPEndPoint GetClientIPEndPoint(int connectionId)
+        {
+            if (server != null)
+            {
+                if (connections.TryGetValue(connectionId, out NetPeer peer))
+                {
+                    return peer.EndPoint;
+                }
+            }
+            return null;
+        }
+
         public void OnUpdate()
         {
             if (server != null)

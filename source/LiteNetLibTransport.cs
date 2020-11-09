@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using LiteNetLib;
 using LiteNetLibMirror;
-
 using UnityEngine;
 
 namespace Mirror
@@ -318,6 +318,11 @@ namespace Mirror
         public override string ServerGetClientAddress(int connectionId)
         {
             return server?.GetClientAddress(connectionId);
+        }
+
+        public IPEndPoint ServerGetClientIPEndPoint(int connectionId)
+        {
+            return server?.GetClientIPEndPoint(connectionId);
         }
 
         public override Uri ServerUri()
