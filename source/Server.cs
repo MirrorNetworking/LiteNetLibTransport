@@ -215,10 +215,10 @@ namespace LiteNetLibMirror
             {
                 if (connections.TryGetValue(connectionId, out NetPeer peer))
                 {
-                    return peer.EndPoint.Address.ToString();
+                    return peer.EndPoint.ToString();
                 }
             }
-            return "";
+            return string.Empty;
         }
 
         public void OnUpdate()
