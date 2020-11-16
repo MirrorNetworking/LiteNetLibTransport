@@ -36,7 +36,7 @@ namespace LiteNetLibMirror
 
         public bool Connected { get; private set; }
 
-        public void Connect(string address, bool ipv6Enabled)
+        public void Connect(string address, int maxConnectAttempts, bool ipv6Enabled)
         {
             // not if already connected or connecting
             if (client != null)
@@ -52,6 +52,7 @@ namespace LiteNetLibMirror
             client = new NetManager(listener);
             client.UpdateTime = updateTime;
             client.DisconnectTimeout = disconnectTimeout;
+            client.MaxConnectAttempts = maxConnectAttempts;
 
             // DualMode seems to break some addresses, so make this an option so that it can be turned on when needed
             if (ipv6Enabled)
