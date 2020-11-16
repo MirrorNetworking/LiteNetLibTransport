@@ -17,6 +17,9 @@ namespace Mirror
         public int disconnectTimeout = 5000;
         public bool ipv6Enabled;
 
+        [Tooltip("Maximum connection attempts before client stops and call disconnect event.")]
+        public int maxConnectAttempts = 10;
+
         [Tooltip("Caps the number of messages the server will process per tick. Allows LateUpdate to finish to let the reset of unity contiue incase more messages arrive before they are processed")]
         public int serverMaxMessagesPerTick = 10000;
 
@@ -175,7 +178,7 @@ namespace Mirror
             client.onData += Client_onData;
             client.onDisconnected += OnClientDisconnected.Invoke;
 
-            client.Connect(address, ipv6Enabled);
+            client.Connect(address, maxConnectAttempts, ipv6Enabled);
         }
 
         private void Client_onData(ArraySegment<byte> data, int channel)
