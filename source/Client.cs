@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace LiteNetLibMirror
 {
-    public delegate void OnClientData(ArraySegment<byte> data, int channel);
+    public delegate void OnClientData(ArraySegment<byte> data, DeliveryMethod deliveryMethod);
 
     public class Client
     {
@@ -81,8 +81,7 @@ namespace LiteNetLibMirror
         private void Listener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
             if (logger.LogEnabled()) logger.Log($"LiteNet CL received {reader.AvailableBytes} bytes. method={deliveryMethod}");
-            int mirrorChannel = LiteNetLibTransportUtils.ConvertChannel(deliveryMethod);
-            onData?.Invoke(reader.GetRemainingBytesSegment(), mirrorChannel);
+            onData?.Invoke(reader.GetRemainingBytesSegment(), deliveryMethod);
             reader.Recycle();
         }
 
@@ -117,14 +116,12 @@ namespace LiteNetLibMirror
             }
         }
 
-        public bool Send(int channelId, ArraySegment<byte> segment)
+        public bool Send(DeliveryMethod deliveryMethod, ArraySegment<byte> segment)
         {
             if (client != null && client.FirstPeer != null)
             {
                 try
                 {
-                    // convert Mirror channel to LiteNetLib channel & send
-                    DeliveryMethod deliveryMethod = LiteNetLibTransportUtils.ConvertChannel(channelId);
                     client.FirstPeer.Send(segment.Array, segment.Offset, segment.Count, deliveryMethod);
                     return true;
                 }

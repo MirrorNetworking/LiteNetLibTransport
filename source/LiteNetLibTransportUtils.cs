@@ -4,6 +4,7 @@ using Mirror;
 
 namespace Mirror
 {
+    [Obsolete("Use channels on LiteNetLibTransport instead", true)]
     public class LiteNetLibChannels
     {
         // channels have an offset of +10 unless they are the default channel that mirror has built in
@@ -47,6 +48,7 @@ namespace LiteNetLibMirror
         /// </summary>
         /// <param name="channel"></param>
         /// <returns></returns>
+        [Obsolete("Use channels on LiteNetLibTransport instead")]
         public static DeliveryMethod ConvertChannel(int channel)
         {
             switch (channel)
@@ -66,6 +68,7 @@ namespace LiteNetLibMirror
             }
         }
 
+        [Obsolete("Use channels on LiteNetLibTransport instead")]
         public static int ConvertChannel(DeliveryMethod channel)
         {
             switch (channel)

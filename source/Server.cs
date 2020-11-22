@@ -8,7 +8,7 @@ using UnityEngine;
 namespace LiteNetLibMirror
 {
     public delegate void OnConnected(int clientId);
-    public delegate void OnServerData(int clientId, ArraySegment<byte> data, int channel);
+    public delegate void OnServerData(int clientId, ArraySegment<byte> data, DeliveryMethod deliveryMethod);
     public delegate void OnDisconnected(int clientId);
 
     public class Server
@@ -106,8 +106,7 @@ namespace LiteNetLibMirror
             int id = ToMirrorId(peer.Id);
 
             if (logger.LogEnabled()) logger.Log($"LiteNet SV received {reader.AvailableBytes} bytes. method={deliveryMethod}");
-            int mirrorChannel = LiteNetLibTransportUtils.ConvertChannel(deliveryMethod);
-            onData?.Invoke(id, reader.GetRemainingBytesSegment(), mirrorChannel);
+            onData?.Invoke(id, reader.GetRemainingBytesSegment(), deliveryMethod);
             reader.Recycle();
         }
 
@@ -137,7 +136,7 @@ namespace LiteNetLibMirror
         }
 
 
-        public bool Send(List<int> connectionIds, int channelId, ArraySegment<byte> segment)
+        public bool Send(List<int> connectionIds, DeliveryMethod deliveryMethod, ArraySegment<byte> segment)
         {
             if (server == null)
             {
@@ -147,12 +146,12 @@ namespace LiteNetLibMirror
 
             foreach (int connectionId in connectionIds)
             {
-                SendOne(connectionId, channelId, segment);
+                SendOne(connectionId, deliveryMethod, segment);
             }
             return true;
         }
 
-        public void SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
+        public void SendOne(int connectionId, DeliveryMethod deliveryMethod, ArraySegment<byte> segment)
         {
             if (server == null)
             {
@@ -164,7 +163,6 @@ namespace LiteNetLibMirror
             {
                 try
                 {
-                    DeliveryMethod deliveryMethod = LiteNetLibTransportUtils.ConvertChannel(channelId);
                     peer.Send(segment.Array, segment.Offset, segment.Count, deliveryMethod);
                 }
                 catch (TooBigPacketException exception)

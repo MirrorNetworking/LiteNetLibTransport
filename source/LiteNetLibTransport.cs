@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using LiteNetLib;
 using LiteNetLibMirror;
@@ -26,6 +27,13 @@ namespace Mirror
         [Tooltip("Caps the number of messages the client will process per tick. Allows LateUpdate to finish to let the reset of unity contiue incase more messages arrive before they are processed")]
         public int clientMaxMessagesPerTick = 1000;
 
+        [Tooltip("Uses index in list to map to DeliveryMethod. eg channel 0 => DeliveryMethod.ReliableOrdered")]
+        public List<DeliveryMethod> channels = new List<DeliveryMethod>()
+        {
+            DeliveryMethod.ReliableOrdered,
+            DeliveryMethod.Unreliable
+        };
+
         /// <summary>
         /// Active Client, null is no client is active
         /// </summary>
@@ -48,6 +56,12 @@ namespace Mirror
         /// If messages were added to DisabledQueues
         /// </summary>
         bool checkMessageQueues;
+
+        private void OnValidate()
+        {
+            Debug.Assert(channels.Distinct().Count() == channels.Count, "LiteNetLibTransport: channels should only use each DeliveryMethod");
+            Debug.Assert(channels.Count == 0, "LiteNetLibTransport: There should be atleast 1 channel");
+        }
 
         void Awake()
         {
@@ -181,8 +195,9 @@ namespace Mirror
             client.Connect(address, maxConnectAttempts, ipv6Enabled);
         }
 
-        private void Client_onData(ArraySegment<byte> data, int channel)
+        private void Client_onData(ArraySegment<byte> data, DeliveryMethod deliveryMethod)
         {
+            int channel = channels.IndexOf(deliveryMethod);
             if (enabled)
             {
                 OnClientDataReceived.Invoke(data, channel);
@@ -200,7 +215,7 @@ namespace Mirror
             {
                 // remove events before calling disconnect so stop loops within mirror
                 client.onConnected -= OnClientConnected.Invoke;
-                client.onData -= OnClientDataReceived.Invoke;
+                client.onData -= Client_onData;
                 client.onDisconnected -= OnClientDisconnected.Invoke;
 
                 client.Disconnect();
@@ -217,7 +232,8 @@ namespace Mirror
                 return;
             }
 
-            client.Send(channelId, segment);
+            DeliveryMethod deliveryMethod = channels[channelId];
+            client.Send(deliveryMethod, segment);
         }
 #else
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
@@ -227,7 +243,9 @@ namespace Mirror
                 logger.LogWarning("Can't send when client is not connected");
                 return false;
             }
-            return client.Send(channelId, segment);
+
+            DeliveryMethod deliveryMethod = channels[channelId];
+            return client.Send(deliveryMethod, segment);
         }
 #endif
         #endregion
@@ -253,8 +271,9 @@ namespace Mirror
             server.Start();
         }
 
-        private void Server_onData(int clientId, ArraySegment<byte> data, int channel)
+        private void Server_onData(int clientId, ArraySegment<byte> data, DeliveryMethod deliveryMethod)
         {
+            int channel = channels.IndexOf(deliveryMethod);
             if (enabled)
             {
                 OnServerDataReceived.Invoke(clientId, data, channel);
@@ -271,7 +290,7 @@ namespace Mirror
             if (server != null)
             {
                 server.onConnected -= OnServerConnected.Invoke;
-                server.onData -= OnServerDataReceived.Invoke;
+                server.onData -= Server_onData;
                 server.onDisconnected -= OnServerDisconnected.Invoke;
 
                 server.Stop();
@@ -292,7 +311,8 @@ namespace Mirror
                 return;
             }
 
-            server.SendOne(connectionId, channelId, segment);
+            DeliveryMethod deliveryMethod = channels[channelId];
+            server.SendOne(connectionId, deliveryMethod, segment);
         }
 #else
         public override bool ServerSend(System.Collections.Generic.List<int> connectionIds, int channelId, ArraySegment<byte> segment)
@@ -303,7 +323,8 @@ namespace Mirror
                 return false;
             }
 
-            return server.Send(connectionIds, channelId, segment);
+            DeliveryMethod deliveryMethod = channels[channelId];
+            return server.Send(connectionIds, deliveryMethod, segment);
         }
 #endif
 
