@@ -63,7 +63,7 @@ namespace Mirror
         private void OnValidate()
         {
             Debug.Assert(channels.Distinct().Count() == channels.Count, "LiteNetLibTransport: channels should only use each DeliveryMethod");
-            Debug.Assert(channels.Count == 0, "LiteNetLibTransport: There should be atleast 1 channel");
+            Debug.Assert(channels.Count > 0, "LiteNetLibTransport: There should be atleast 1 channel");
         }
 
         void Awake()
