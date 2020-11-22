@@ -20,6 +20,8 @@ namespace LiteNetLibMirror
         readonly ushort port;
         readonly int updateTime;
         readonly int disconnectTimeout;
+        readonly string acceptConnectKey;
+
         readonly ILogger logger;
 
         // LiteNetLib state
@@ -30,11 +32,12 @@ namespace LiteNetLibMirror
         public event OnServerData onData;
         public event OnDisconnected onDisconnected;
 
-        public Server(ushort port, int updateTime, int disconnectTimeout, ILogger logger)
+        public Server(ushort port, int updateTime, int disconnectTimeout, string acceptConnectKey, ILogger logger)
         {
             this.port = port;
             this.updateTime = updateTime;
             this.disconnectTimeout = disconnectTimeout;
+            this.acceptConnectKey = acceptConnectKey;
             this.logger = logger;
         }
 
@@ -90,7 +93,7 @@ namespace LiteNetLibMirror
         private void Listener_ConnectionRequestEvent(ConnectionRequest request)
         {
             logger.Log("LiteNet SV connection request");
-            request.AcceptIfKey(LiteNetLibTransportUtils.ConnectKey);
+            request.AcceptIfKey(acceptConnectKey);
         }
 
         private void Listener_PeerConnectedEvent(NetPeer peer)

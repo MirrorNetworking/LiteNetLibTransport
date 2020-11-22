@@ -36,7 +36,7 @@ namespace LiteNetLibMirror
 
         public bool Connected { get; private set; }
 
-        public void Connect(string address, int maxConnectAttempts, bool ipv6Enabled)
+        public void Connect(string address, int maxConnectAttempts, bool ipv6Enabled, string connectKey)
         {
             // not if already connected or connecting
             if (client != null)
@@ -68,7 +68,7 @@ namespace LiteNetLibMirror
 
             // start & connect
             client.Start();
-            client.Connect(address, port, LiteNetLibTransportUtils.ConnectKey);
+            client.Connect(address, port, connectKey);
         }
 
         private void Listener_PeerConnectedEvent(NetPeer peer)

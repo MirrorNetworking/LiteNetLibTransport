@@ -41,6 +41,7 @@ namespace LiteNetLibMirror
 {
     public static class LiteNetLibTransportUtils
     {
+        [Obsolete("Use ConnectKey on LiteNetLibTransport instead", true)]
         public static string ConnectKey => "MIRROR_LITENETLIB";
 
         /// <summary>

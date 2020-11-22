@@ -34,6 +34,9 @@ namespace Mirror
             DeliveryMethod.Unreliable
         };
 
+        [Tooltip("Key that client most give server in order to connect, this is handled automatically by the transport.")]
+        public string connectKey = "MIRROR_LITENETLIB";
+
         /// <summary>
         /// Active Client, null is no client is active
         /// </summary>
@@ -192,7 +195,7 @@ namespace Mirror
             client.onData += Client_onData;
             client.onDisconnected += OnClientDisconnected.Invoke;
 
-            client.Connect(address, maxConnectAttempts, ipv6Enabled);
+            client.Connect(address, maxConnectAttempts, ipv6Enabled, connectKey);
         }
 
         private void Client_onData(ArraySegment<byte> data, DeliveryMethod deliveryMethod)
@@ -262,7 +265,7 @@ namespace Mirror
                 return;
             }
 
-            server = new Server(port, updateTime, disconnectTimeout, logger);
+            server = new Server(port, updateTime, disconnectTimeout, connectKey, logger);
 
             server.onConnected += OnServerConnected.Invoke;
             server.onData += Server_onData;
